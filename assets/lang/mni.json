@@ -1,0 +1,20 @@
+{
+  "_note": "Placeholder — needs review by a native Manipuri speaker before shipping.",
+  "app_name": "KrishokBondhon",
+  "welcome_back": "Welcome back",
+  "login": "Login",
+  "register": "Create account",
+  "send_otp": "Send OTP",
+  "verify_otp": "Verify & Continue",
+  "home": "Home",
+  "community": "Community",
+  "qna": "Q&A",
+  "experts": "Experts",
+  "profile": "Profile",
+  "detect_disease": "Detect disease",
+  "ask_question": "Ask a question",
+  "diagnosis_history": "Diagnosis history",
+  "settings": "Settings",
+  "language": "Language",
+  "logout": "Log out"
+}

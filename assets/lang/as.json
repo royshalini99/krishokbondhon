@@ -1,0 +1,19 @@
+{
+  "app_name": "কৃষকবন্ধন",
+  "welcome_back": "পুনৰ স্বাগতম",
+  "login": "লগ ইন",
+  "register": "একাউণ্ট তৈয়াৰ কৰক",
+  "send_otp": "OTP পঠিয়াওক",
+  "verify_otp": "সত্যাপন কৰক",
+  "home": "গৃহ",
+  "community": "সম্প্ৰদায়",
+  "qna": "প্ৰশ্ন-উত্তৰ",
+  "experts": "বিশেষজ্ঞ",
+  "profile": "প্ৰ'ফাইল",
+  "detect_disease": "ৰোগ চিনাক্ত কৰক",
+  "ask_question": "প্ৰশ্ন সোধক",
+  "diagnosis_history": "নিদানৰ ইতিহাস",
+  "settings": "ছেটিংছ",
+  "language": "ভাষা",
+  "logout": "লগ আউট"
+}
