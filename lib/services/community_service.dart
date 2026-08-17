@@ -4,8 +4,6 @@ import 'api_service.dart';
 import '../features/community/models/community_post.dart';
 import '../models/paginated.dart';
 
-/// Talks to the `/community/*` endpoints on the Node.js gateway.
-/// See docs/API_CONTRACT.md for the exact request/response shapes.
 class CommunityService {
   CommunityService._();
   static final CommunityService instance = CommunityService._();
@@ -32,18 +30,23 @@ class CommunityService {
     required List<String> tags,
     List<String> imagePaths = const [],
   }) async {
-    final form = FormData.fromMap({
-      'content': content,
-      'tags': tags, // Dio serializes List<String> as repeated form fields
-      for (var i = 0; i < imagePaths.length; i++)
-        'images[]': await MultipartFile.fromFile(imagePaths[i]),
-    });
+    // Built manually (NOT FormData.fromMap) because a Dart Map can only
+    // hold one value per key — repeating 'images[]' in a map literal
+    // silently overwrites all but the last file. form.fields/.files are
+    // lists of MapEntry, so duplicate field names are preserved correctly.
+    final form = FormData();
+    form.fields.add(MapEntry('content', content));
+    for (final tag in tags) {
+      form.fields.add(MapEntry('tags', tag));
+    }
+    for (final path in imagePaths) {
+      form.files.add(MapEntry('images[]', await MultipartFile.fromFile(path)));
+    }
+
     final response = await _api.post(ApiConstants.createPost, data: form);
     return CommunityPost.fromJson(response.data as Map<String, dynamic>);
   }
 
-  /// Returns the authoritative like count + state from the server so the
-  /// UI can reconcile if a double-tap raced with the request.
   Future<({int likeCount, bool likedByMe})> toggleLike(String postId) async {
     final response = await _api.post(ApiConstants.withId(ApiConstants.likePost, postId));
     final data = response.data as Map<String, dynamic>;
@@ -67,5 +70,9 @@ class CommunityService {
       data: {'content': content},
     );
     return PostComment.fromJson(response.data as Map<String, dynamic>);
+  }
+  
+  Future<void> deletePost(String postId) async {
+    await _api.delete(ApiConstants.withId(ApiConstants.deletePost, postId));
   }
 }

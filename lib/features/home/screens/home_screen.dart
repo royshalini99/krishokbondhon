@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../services/mock_data_service.dart';
 import '../../../config/routes.dart';
 import '../../disease_detection/widgets/diagnosis_history_card.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,6 +13,15 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recentDiagnoses = MockDataService.diagnosisHistory();
+    final user = context.watch<AuthProvider>().currentUser;
+
+    final firstName = (user?.name ?? '').split(' ').first;
+    final greeting = firstName.isEmpty ? 'Namaskar 👋' : 'Namaskar, $firstName 👋';
+
+    final locationParts = [user?.village, user?.district, user?.state]
+        .where((s) => s != null && s.trim().isNotEmpty)
+        .toList();
+    final locationText = locationParts.isEmpty ? 'Location not set' : locationParts.join(', ');
 
     return Scaffold(
       body: SafeArea(
@@ -25,9 +36,9 @@ class HomeScreen extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Namaskar, Ratul 👋', style: Theme.of(context).textTheme.titleMedium),
+                        Text(greeting, style: Theme.of(context).textTheme.titleMedium),
                         Text(
-                          'Katigorah, Cachar · Assam',
+                          locationText,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],

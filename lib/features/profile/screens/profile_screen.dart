@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../config/routes.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../../models/user_model.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().currentUser;
+
+    final displayName = user?.name ?? 'Unknown';
+    final locationText = [user?.village, user?.district]
+        .where((s) => s != null && s.trim().isNotEmpty)
+        .join(', ');
+    final crops = user?.crops ?? const [];
+
     return Scaffold(
       appBar: AppBar(title: const Text('My Profile')),
       body: ListView(
@@ -30,35 +41,41 @@ class ProfileScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Ratul Deb', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+                      Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
                       const SizedBox(height: 2),
-                      Text('Katigorah, Cachar · Assam', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12.5)),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _Badge(label: 'Tomato'),
-                          const SizedBox(width: 6),
-                          _Badge(label: 'Potato'),
-                        ],
+                      Text(
+                        locationText.isEmpty ? 'Location not set' : locationText,
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12.5),
                       ),
+                      const SizedBox(height: 8),
+                      if (crops.isNotEmpty)
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: crops.map((crop) => _Badge(label: crop)).toList(),
+                        ),
                     ],
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit_rounded, color: Colors.white),
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.editProfile, arguments: null),
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.editProfile, arguments: user),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          Row(
+          // Note: these three stats aren't wired to real data yet — they'll
+          // need their own backend endpoints (diagnosis count, question count,
+          // post count) once Phase 4/5/6 are built. Showing 0 for now instead
+          // of fake numbers.
+          const Row(
             children: [
-              Expanded(child: _StatCard(icon: Icons.eco_rounded, value: '12', label: 'Diagnoses')),
-              const SizedBox(width: 12),
-              Expanded(child: _StatCard(icon: Icons.forum_rounded, value: '5', label: 'Questions')),
-              const SizedBox(width: 12),
-              Expanded(child: _StatCard(icon: Icons.groups_rounded, value: '23', label: 'Posts')),
+              Expanded(child: _StatCard(icon: Icons.eco_rounded, value: '0', label: 'Diagnoses')),
+              SizedBox(width: 12),
+              Expanded(child: _StatCard(icon: Icons.forum_rounded, value: '0', label: 'Questions')),
+              SizedBox(width: 12),
+              Expanded(child: _StatCard(icon: Icons.groups_rounded, value: '0', label: 'Posts')),
             ],
           ),
           const SizedBox(height: 24),
@@ -77,6 +94,12 @@ class ProfileScreen extends StatelessWidget {
             label: 'Settings',
             onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
           ),
+          if (user?.role == UserRole.admin)
+            _MenuTile(
+              icon: Icons.fact_check_outlined,
+              label: 'Pending expert approvals',
+              onTap: () => Navigator.pushNamed(context, AppRoutes.adminPendingExperts),
+            ),
           _MenuTile(
             icon: Icons.help_outline_rounded,
             label: 'Help & support',
@@ -86,7 +109,12 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.logout_rounded,
             label: 'Log out',
             color: AppColors.danger,
-            onTap: () => Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (r) => false),
+            onTap: () async {
+              await context.read<AuthProvider>().logout();
+              if (context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (r) => false);
+              }
+            },
           ),
         ],
       ),

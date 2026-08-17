@@ -14,6 +14,8 @@ import '../features/community/screens/create_post_screen.dart';
 import '../features/qa_support/screens/ask_question_screen.dart';
 import '../features/qa_support/screens/question_detail_screen.dart';
 import '../features/experts/screens/expert_profile_screen.dart';
+import '../features/experts/screens/expert_signup_screen.dart';
+import '../features/experts/screens/admin_pending_experts_screen.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
 import '../features/profile/screens/settings_screen.dart';
 import '../features/profile/screens/language_screen.dart';
@@ -36,6 +38,8 @@ class AppRoutes {
   static const String askQuestion = '/ask-question';
   static const String questionDetail = '/question-detail';
   static const String expertProfile = '/expert-profile';
+  static const String expertSignup = '/expert-signup';
+  static const String adminPendingExperts = '/admin/pending-experts';
   static const String editProfile = '/edit-profile';
   static const String settings = '/settings';
   static const String language = '/language';
@@ -51,7 +55,16 @@ class AppRoutes {
       case register:
         return _page(const RegisterScreen());
       case otp:
-        return _page(OtpScreen(phone: settings.arguments as String? ?? ''));
+        final args = settings.arguments;
+        String phone = '';
+        bool isExpert = false;
+        if (args is Map) {
+          phone = args['phone'] as String? ?? '';
+          isExpert = args['isExpert'] as bool? ?? false;
+        } else if (args is String) {
+          phone = args;
+        }
+        return _page(OtpScreen(phone: phone, isExpert: isExpert));
       case main:
         return _page(const MainNavScreen());
       case capture:
@@ -70,6 +83,10 @@ class AppRoutes {
         return _page(QuestionDetailScreen(question: settings.arguments));
       case expertProfile:
         return _page(ExpertProfileScreen(expert: settings.arguments));
+      case expertSignup:
+        return _page(const ExpertSignupScreen());
+      case adminPendingExperts:
+        return _page(const AdminPendingExpertsScreen());
       case editProfile:
         return _page(EditProfileScreen(user: settings.arguments as AppUser?));
       case AppRoutes.settings:

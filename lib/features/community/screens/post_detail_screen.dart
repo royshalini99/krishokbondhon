@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/api_constants.dart';
 import '../models/community_post.dart';
 import '../widgets/post_card.dart';
 import '../../../services/community_service.dart';
+import 'image_gallery_viewer_screen.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final dynamic post;
@@ -69,6 +71,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
+  void _openGallery(int index) {
+    final urls = _post.images.map(ApiConstants.resolveImageUrl).toList();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ImageGalleryViewerScreen(imageUrls: urls, initialIndex: index),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,7 +93,63 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  PostCard(post: _post),
+                  PostCard(
+                    post: _post,
+                    onDeleted: () => Navigator.pop(context, true),
+                  ),
+
+                  if (_post.images.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      _post.images.length > 1 ? 'Photos (${_post.images.length})' : 'Photo',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 110,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _post.images.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, i) {
+                          final url = ApiConstants.resolveImageUrl(_post.images[i]);
+                          return GestureDetector(
+                            onTap: () => _openGallery(i),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                url,
+                                width: 110,
+                                height: 110,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(
+                                    width: 110,
+                                    height: 110,
+                                    color: AppColors.surfaceMuted,
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 20, height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  width: 110,
+                                  height: 110,
+                                  color: AppColors.surfaceMuted,
+                                  child: const Icon(Icons.broken_image_outlined, color: AppColors.textSecondary),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 20),
                   Text('Comments (${_comments.length})', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 12),

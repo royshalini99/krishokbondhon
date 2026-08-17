@@ -7,6 +7,7 @@ import '../../../services/community_service.dart';
 import '../widgets/post_card.dart';
 import '../../../config/routes.dart';
 
+
 class CommunityFeedScreen extends StatefulWidget {
   const CommunityFeedScreen({super.key});
 
@@ -125,9 +126,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Farmer Community'),
-        actions: [
-          IconButton(icon: const Icon(Icons.search_rounded), onPressed: () {}),
-        ],
       ),
       body: Column(
         children: [
@@ -217,7 +215,11 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             );
           }
-          return PostCard(post: _posts[i], onLike: () => _toggleLike(i));
+          return PostCard(
+            post: _posts[i],
+            onLike: () => _toggleLike(i),
+            onDeleted: () => setState(() => _posts.removeAt(i)),
+          );
         },
       ),
     );

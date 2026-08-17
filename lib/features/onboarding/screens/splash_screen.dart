@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../services/storage_service.dart';
 import '../../../config/routes.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,14 +25,25 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     final onboardingDone = await StorageService.instance.isOnboardingDone();
-    final token = await StorageService.instance.getAuthToken();
 
     if (!onboardingDone) {
       Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
-    } else if (token == null) {
-      Navigator.pushReplacementNamed(context, AppRoutes.login);
-    } else {
+      return;
+    }
+
+    // Instead of just checking whether a token exists, actually ask the
+    // backend if it's still valid and fetch the real user data — an
+    // expired or tampered token should send the farmer back to Login,
+    // not straight into the app with no user data loaded.
+    await context.read<AuthProvider>().checkSavedSession();
+    if (!mounted) return;
+
+    final loggedIn = context.read<AuthProvider>().currentUser != null;
+
+    if (loggedIn) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
+    } else {
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
   }
 

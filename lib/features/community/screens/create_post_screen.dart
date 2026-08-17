@@ -13,17 +13,34 @@ class CreatePostScreen extends StatefulWidget {
 }
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
+  static const _maxImages = 4;
+
   final _contentController = TextEditingController();
   final _tags = <String>{};
   final _availableTags = const ['Tomato', 'Potato', 'Pest Control', 'Success Story', 'Question'];
   final _picker = ImagePicker();
-  XFile? _image;
+  final List<XFile> _images = [];
   bool _posting = false;
   String? _error;
 
-  Future<void> _pickImage() async {
-    final file = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (file != null) setState(() => _image = file);
+  Future<void> _pickImages() async {
+    final remaining = _maxImages - _images.length;
+    if (remaining <= 0) {
+      setState(() => _error = 'You can add up to $_maxImages photos per post.');
+      return;
+    }
+
+    final files = await _picker.pickMultiImage(imageQuality: 85, limit: remaining);
+    if (files.isEmpty) return;
+
+    setState(() {
+      _images.addAll(files.take(remaining));
+      _error = null;
+    });
+  }
+
+  void _removeImage(int index) {
+    setState(() => _images.removeAt(index));
   }
 
   Future<void> _submit() async {
@@ -36,7 +53,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       await CommunityService.instance.createPost(
         content: _contentController.text.trim(),
         tags: _tags.toList(),
-        imagePaths: _image != null ? [_image!.path] : const [],
+        imagePaths: _images.map((f) => f.path).toList(),
       );
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -65,22 +82,63 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     TextField(
                       controller: _contentController,
                       maxLines: 6,
+                      maxLength: 2000,
                       decoration: const InputDecoration(
                         hintText: "What's happening on your farm today?",
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    if (_image != null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.file(File(_image!.path), height: 160, width: double.infinity, fit: BoxFit.cover),
-                      )
-                    else
-                      OutlinedButton.icon(
-                        onPressed: _pickImage,
-                        icon: const Icon(Icons.add_photo_alternate_outlined),
-                        label: const Text('Add photo'),
+                    const SizedBox(height: 8),
+
+                    if (_images.isNotEmpty)
+                      SizedBox(
+                        height: 100,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _images.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, i) {
+                            return Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Image.file(
+                                    File(_images[i].path),
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () => _removeImage(i),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.close_rounded, size: 16, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
+
+                    const SizedBox(height: 12),
+                    if (_images.length < _maxImages)
+                      OutlinedButton.icon(
+                        onPressed: _pickImages,
+                        icon: const Icon(Icons.add_photo_alternate_outlined),
+                        label: Text(_images.isEmpty
+                            ? 'Add photos'
+                            : 'Add more (${_images.length}/$_maxImages)'),
+                      ),
+
                     const SizedBox(height: 20),
                     Text('Tag your post', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 10),

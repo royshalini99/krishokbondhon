@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/primary_button.dart';
-import '../../../services/storage_service.dart';
 import '../../../config/routes.dart';
+import '../providers/auth_provider.dart';
 
 class OtpScreen extends StatefulWidget {
   final String phone;
-  const OtpScreen({super.key, required this.phone});
+  final bool isExpert;
+  const OtpScreen({super.key, required this.phone, this.isExpert = false});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -40,11 +42,36 @@ class _OtpScreenState extends State<OtpScreen> {
 
   Future<void> _verify() async {
     setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-    await StorageService.instance.saveAuthToken('demo-token-123');
+
+    final error = await context.read<AuthProvider>().verifyOtp(
+          phone: widget.phone,
+          otp: _otpController.text.trim(),
+        );
+
     setState(() => _loading = false);
     if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.main, (route) => false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
+
+    if (widget.isExpert) {
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.expertSignup, (route) => false);
+    } else {
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.main, (route) => false);
+    }
+  }
+
+  Future<void> _resend() async {
+    final error = await context.read<AuthProvider>().sendOtp(phone: widget.phone);
+    if (!mounted) return;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+    } else {
+      _startTimer();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('OTP resent.')));
+    }
   }
 
   @override
@@ -95,7 +122,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 child: _secondsLeft > 0
                     ? Text('Resend code in ${_secondsLeft}s', style: Theme.of(context).textTheme.bodyMedium)
                     : TextButton(
-                        onPressed: _startTimer,
+                        onPressed: _resend,
                         child: const Text('Resend OTP'),
                       ),
               ),
