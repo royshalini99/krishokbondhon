@@ -96,3 +96,4 @@ any 6-digit OTP → home dashboard → every tab and sub-screen is reachable.
 - The Khasi/Garo/Manipuri translation files are placeholders and are
   flagged with a `_note` key — get these reviewed by native speakers
   before shipping, per the project's multilingual accessibility goal.
+"# krishokbondhon" 
